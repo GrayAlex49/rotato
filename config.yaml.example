@@ -1,0 +1,87 @@
+# Rotato Configuration Example
+# Copy this file to config.yaml and customize for your setup
+
+global:
+  # How often to rotate wallpapers (in minutes)
+  rotation_interval_minutes: 10
+
+  # Cache file to store image metadata (speeds up scanning)
+  cache_file: image_cache.json
+
+  # Maximum directory recursion depth when scanning
+  max_recursion_depth: 10
+
+  # Supported image formats
+  supported_formats:
+    - .jpg
+    - .jpeg
+    - .png
+    - .webp
+    - .bmp
+
+  # Global hotkeys (Windows keyboard shortcuts)
+  hotkeys:
+    # Manually trigger wallpaper rotation
+    trigger_rotation: ctrl+alt+w
+
+    # Open current wallpaper in File Explorer
+    open_current_image: ctrl+alt+o
+
+# Monitor configurations
+# You can have multiple monitor configurations with different settings
+monitors:
+  # Configuration 1: Auto (applies to all monitors)
+  - monitor_name: auto  # 'auto' means any/all monitors
+
+    # Image source directories or files
+    # You can list multiple paths
+    image_sources:
+      - C:/Users/YourName/Pictures/Wallpapers
+      - D:/Photos/Nature
+      # - /path/to/specific/image.jpg
+
+    # Recursively scan subdirectories
+    recursive: true
+
+    # Rotation interval for this monitor (overrides global setting)
+    rotation_interval_minutes: 10
+
+    # Filtering options - remove or comment out filters you don't need
+    filters:
+      # Resolution filters (in pixels)
+      min_width: 1920
+      min_height: 1080
+      # max_width: 3840
+      # max_height: 2160
+
+      # Aspect ratio filters
+      # Common ratios: 1.78 (16:9), 2.33 (21:9), 1.6 (16:10), 0.56 (9:16 vertical)
+      aspect_ratios: [1.78]  # Only 16:9 images
+      aspect_ratio_tolerance: 0.1  # ±10% tolerance
+
+      # Brightness filter (0-255, average RGB brightness)
+      # Useful to avoid too dark or too bright images
+      brightness_range: [50, 200]
+
+      # File size limit (in megabytes)
+      max_file_size_mb: 20
+
+  # Configuration 2: Example for specific monitor
+  # Uncomment and customize if you have multiple monitors with different needs
+  # - monitor_name: \\\\.\\DISPLAY1  # Windows monitor device name
+  #   image_sources:
+  #     - C:/Users/YourName/Pictures/Vertical
+  #   recursive: true
+  #   rotation_interval_minutes: 15
+  #   filters:
+  #     min_width: 1080
+  #     min_height: 1920
+  #     aspect_ratios: [0.56]  # 9:16 for vertical monitors
+  #     aspect_ratio_tolerance: 0.1
+
+# Tips:
+# 1. To find your monitor device names, run Rotato and check the console output
+# 2. Use forward slashes (/) or double backslashes (\\) in Windows paths
+# 3. Set rotation_interval_minutes to a large number (e.g., 1440) for daily rotation
+# 4. Remove filters you don't need - they're all optional
+# 5. Use the hotkey (default: Ctrl+Alt+W) to test rotation immediately
