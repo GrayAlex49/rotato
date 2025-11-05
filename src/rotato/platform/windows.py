@@ -23,35 +23,34 @@ class WindowsMonitorDetector:
         if not WINDOWS_AVAILABLE:
             raise RuntimeError("Windows API not available")
 
-        monitors = []
+        monitors: List[MonitorInfo] = []
 
-        def enum_callback(hmonitor, hdc, rect, data):
+        try:
+            enum_result = win32api.EnumDisplayMonitors(None, None)
+        except Exception as e:
+            print(f"Error detecting monitors: {e}")
+            return monitors
+
+        for hmonitor, _hdc, rect in enum_result:
             monitor_info = win32api.GetMonitorInfo(hmonitor)
             device_name = monitor_info["Device"]
 
-            # Get monitor dimensions
             left, top, right, bottom = rect
             width = right - left
             height = bottom - top
             is_primary = monitor_info["Flags"] & win32con.MONITORINFOF_PRIMARY != 0
 
-            monitor = MonitorInfo(
-                handle=hmonitor,
-                width=width,
-                height=height,
-                x=left,
-                y=top,
-                is_primary=is_primary,
-                name=device_name,
+            monitors.append(
+                MonitorInfo(
+                    handle=hmonitor,
+                    width=width,
+                    height=height,
+                    x=left,
+                    y=top,
+                    is_primary=is_primary,
+                    name=device_name,
+                )
             )
-
-            monitors.append(monitor)
-            return True
-
-        try:
-            win32api.EnumDisplayMonitors(None, None, enum_callback, None)
-        except Exception as e:
-            print(f"Error detecting monitors: {e}")
 
         return monitors
 

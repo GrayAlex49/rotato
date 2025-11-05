@@ -1,7 +1,6 @@
 """Main application logic for Rotato."""
 
 import random
-import sys
 import threading
 from pathlib import Path
 from typing import Dict, List
@@ -60,7 +59,6 @@ class DesktopBackgroundManager:
 
         # Setup
         self.setup_hotkeys()
-        self.discover_and_filter_images()
 
     def setup_hotkeys(self):
         """Setup global hotkeys"""
@@ -77,12 +75,33 @@ class DesktopBackgroundManager:
         except Exception as e:
             print(f"Error setting up hotkeys: {e}")
 
-    def discover_and_filter_images(self):
+    def discover_and_filter_images(self, show_startup_progress: bool = False):
         """Discover and filter images for all monitors"""
-        print("Discovering and filtering images...")
+        if show_startup_progress:
+            print("  [1/3] Cataloging images...", flush=True)
+        else:
+            print("Discovering and filtering images...", flush=True)
 
         monitor_configs = self.config["monitors"]
 
+        total_targets = 0
+        for monitor_config_data in monitor_configs:
+            monitor_config = MonitorConfig(**monitor_config_data)
+
+            if monitor_config.monitor_name == "auto":
+                total_targets += len(self.monitor_manager.monitors)
+            else:
+                monitor = self.monitor_manager.get_monitor_by_name(
+                    monitor_config.monitor_name
+                )
+                if monitor:
+                    total_targets += 1
+
+        if total_targets == 0:
+            print("    No monitors found in configuration. Skipping discovery.", flush=True)
+            return
+
+        processed = 0
         for monitor_config_data in monitor_configs:
             monitor_config = MonitorConfig(**monitor_config_data)
 
@@ -96,9 +115,20 @@ class DesktopBackgroundManager:
                 target_monitors = [monitor] if monitor else []
 
             for monitor in target_monitors:
+                processed += 1
+                print(
+                    f"    [{processed}/{total_targets}] {monitor.name}: "
+                    f"Scanning {len(monitor_config.image_sources)} source(s)...",
+                    flush=True,
+                )
+
                 # Discover images
                 images = self.image_manager.discover_images(
                     monitor_config.image_sources, monitor_config.recursive
+                )
+                print(
+                    f"      Discovered {len(images)} candidate images. Applying filters...",
+                    flush=True,
                 )
 
                 # Filter images
@@ -107,10 +137,14 @@ class DesktopBackgroundManager:
                 )
 
                 self.monitor_images[monitor.name] = filtered_images
-                print(f"Monitor {monitor.name}: {len(filtered_images)} suitable images found")
+                print(
+                    f"      Ready {len(filtered_images)} images for {monitor.name}.",
+                    flush=True,
+                )
 
         # Save cache
         self.image_cache.save_cache()
+        print("    Image catalog complete.", flush=True)
 
     def start_rotation(self):
         """Start wallpaper rotation for all monitors"""
@@ -253,18 +287,26 @@ class DesktopBackgroundManager:
 
         if self.tray_icon:
             self.tray_icon.stop()
-
-        sys.exit(0)
+        # Returning without raising SystemExit keeps tray callbacks happy
+        # The main loop in run() will exit once tray_icon.run() unwinds.
 
     def run(self):
         """Run the application"""
         print("Starting Rotato - Desktop Background Manager...")
 
+        if not self.monitor_images:
+            self.discover_and_filter_images(show_startup_progress=True)
+        else:
+            print("  [1/3] Cataloging images... (cached)", flush=True)
+
         # Create and run tray icon
+        print("  [2/3] Preparing system tray...", flush=True)
         self.create_tray_icon()
 
         # Start rotation
+        print("  [3/3] Starting rotation timers...", flush=True)
         self.start_rotation()
+        print("Rotato is up and running. Check the tray icon for controls.", flush=True)
 
         # Run tray icon (this blocks)
         if self.tray_icon:
